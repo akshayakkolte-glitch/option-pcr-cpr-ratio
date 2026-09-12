@@ -41,13 +41,33 @@ with tab1:
 with tab2:
     st.header("Live Option Chain")
     st.write("Real-time Open Interest (OI), change in OI, LTP, and strike prices.")
-    st.success("Option chain table and strike visualization will display here.")
+    
+    # Mock Option Chain Table data
+    option_chain_data = pd.DataFrame({
+        "CALL OI": [150000, 230000, 410000, 890000, 1200000],
+        "CALL Chg OI": [12000, -5000, 34000, 78000, 150000],
+        "CALL LTP": [145.2, 98.5, 54.1, 22.4, 8.5],
+        "Strike Price": [23300, 23350, 23400, 23450, 23500],
+        "PUT LTP": [12.1, 28.4, 65.2, 112.0, 175.5],
+        "PUT Chg OI": [-8000, 19000, 45000, 92000, 134000],
+        "PUT OI": [900000, 750000, 620000, 410000, 210000]
+    })
+    st.dataframe(option_chain_data, use_container_width=True)
 
 with tab3:
-    # Sidebar Controls specific to analytics
+    # Sidebar Controls specific to analytics with dynamic expiry mapping
     st.sidebar.header("Dashboard Controls")
     index_choice = st.sidebar.selectbox("Select Index", ["NIFTY", "BANKNIFTY", "SENSEX"])
-    expiry_date = st.sidebar.selectbox("Select Expiry Date", ["15 Sep 2026", "22 Sep 2026", "29 Sep 2026"])
+    
+    # Dynamic expiry options based on selected index
+    if index_choice == "NIFTY":
+        expiry_options = ["15 Sep 2026", "22 Sep 2026", "29 Sep 2026"]
+    elif index_choice == "BANKNIFTY":
+        expiry_options = ["17 Sep 2026", "24 Sep 2026", "01 Oct 2026"]
+    else:
+        expiry_options = ["18 Sep 2026", "25 Sep 2026", "02 Oct 2026"]
+        
+    expiry_date = st.sidebar.selectbox("Select Expiry Date", expiry_options)
     chart_theme = st.sidebar.selectbox("Chart Theme", ["Dark", "Light"])
 
     # Summary metrics row
@@ -65,7 +85,7 @@ with tab3:
     st.subheader(f"Part 1: Intraday Timeline Ratios ({index_choice} — {expiry_date})")
     st.write("Tracking overall market Put-Call Ratio (PCR) and Call-Put Ratio (CPR) alongside index spot movement.")
 
-    # Time series data generation
+    # Time series data generation with horizontal layout indices (Times on X-axis)
     times = pd.date_range("09:15", "15:30", freq="5min").time
     time_strs = [t.strftime("%I:%M %p") for t in times]
     
@@ -76,34 +96,49 @@ with tab3:
     oi_change_call = np.cumsum(np.random.randn(len(times)) * 50)
     oi_change_put = np.cumsum(np.random.randn(len(times)) * 50)
 
-    # Chart 1: Main PCR & CPR Timeline
+    # Chart 1: Main PCR & CPR Timeline (Horizontal X-Axis, hovering shows both PCR and CPR)
     fig = make_subplots(specs=[[{"secondary_y": True}]])
-    fig.add_trace(go.Scatter(x=time_strs, y=pcr_vals, name="Overall PCR", line=dict(color="blue", width=2)), secondary_y=False)
-    fig.add_trace(go.Scatter(x=time_strs, y=cpr_vals, name="Overall CPR", line=dict(color="red", width=2)), secondary_y=False)
-    fig.add_trace(go.Scatter(x=time_strs, y=spot_vals, name="NIFTY Price", line=dict(color="gray", width=1, dash="dash")), secondary_y=True)
+    fig.add_trace(go.Scatter(x=time_strs, y=pcr_vals, name="Overall PCR", mode="lines+markers", line=dict(color="blue", width=2)), secondary_y=False)
+    fig.add_trace(go.Scatter(x=time_strs, y=cpr_vals, name="Overall CPR", mode="lines+markers", line=dict(color="red", width=2)), secondary_y=False)
+    fig.add_trace(go.Scatter(x=time_strs, y=spot_vals, name=f"{index_choice} Price", mode="lines", line=dict(color="gray", width=1, dash="dash")), secondary_y=True)
     
-    fig.update_layout(height=400, margin=dict(l=20, r=20, t=20, b=20), legend=dict(orientation="h", y=1.1, x=0.8))
+    fig.update_layout(
+        height=400, 
+        margin=dict(l=20, r=20, t=20, b=20), 
+        legend=dict(orientation="h", y=1.1, x=0.8),
+        xaxis=dict(title="Time (Horizontal)")
+    )
     st.plotly_chart(fig, use_container_width=True)
 
     # Chart 2: OI Change Intraday Chart (Call vs Put Change)
     fig_oi = make_subplots(specs=[[{"secondary_y": True}]])
-    fig_oi.add_trace(go.Scatter(x=time_strs, y=oi_change_call, name="Call OI Change", line=dict(color="red", width=2)), secondary_y=False)
-    fig_oi.add_trace(go.Scatter(x=time_strs, y=oi_change_put, name="Put OI Change", line=dict(color="green", width=2)), secondary_y=False)
-    fig_oi.add_trace(go.Scatter(x=time_strs, y=spot_vals, name="NIFTY Price", line=dict(color="gray", width=1, dash="dash")), secondary_y=True)
+    fig_oi.add_trace(go.Scatter(x=time_strs, y=oi_change_call, name="Call OI Change", mode="lines", line=dict(color="red", width=2)), secondary_y=False)
+    fig_oi.add_trace(go.Scatter(x=time_strs, y=oi_change_put, name="Put OI Change", mode="lines", line=dict(color="green", width=2)), secondary_y=False)
+    fig_oi.add_trace(go.Scatter(x=time_strs, y=spot_vals, name=f"{index_choice} Price", mode="lines", line=dict(color="gray", width=1, dash="dash")), secondary_y=True)
     
-    fig_oi.update_layout(height=300, margin=dict(l=20, r=20, t=20, b=20), legend=dict(orientation="h", y=1.1, x=0.8))
+    fig_oi.update_layout(
+        height=300, 
+        margin=dict(l=20, r=20, t=20, b=20), 
+        legend=dict(orientation="h", y=1.1, x=0.8),
+        xaxis=dict(title="Time (Horizontal)")
+    )
     st.plotly_chart(fig_oi, use_container_width=True)
 
     st.markdown("---")
     st.subheader("Part 2: 16-Strike Combined Zone Analysis (8 Above + 8 Below Strikes Aggregate)")
-    st.write("Aggregated Open Interest for 8 strikes above and 8 strikes below ATM (16 strikes total) matching Part 1 colors.")
+    st.write(f"Aggregated Open Interest for 8 strikes above and 8 strikes below ATM ({index_choice}) matching Part 1 colors.")
     
     fig2 = make_subplots(specs=[[{"secondary_y": True}]])
-    fig2.add_trace(go.Scatter(x=time_strs, y=pcr_vals * 1.05, name="PCR", line=dict(color="blue", width=2)), secondary_y=False)
-    fig2.add_trace(go.Scatter(x=time_strs, y=cpr_vals * 0.95, name="CPR", line=dict(color="red", width=2)), secondary_y=False)
-    fig2.add_trace(go.Scatter(x=time_strs, y=spot_vals, name="NIFTY Price", line=dict(color="gray", width=1, dash="dash")), secondary_y=True)
+    fig2.add_trace(go.Scatter(x=time_strs, y=pcr_vals * 1.05, name="PCR", mode="lines", line=dict(color="blue", width=2)), secondary_y=False)
+    fig2.add_trace(go.Scatter(x=time_strs, y=cpr_vals * 0.95, name="CPR", mode="lines", line=dict(color="red", width=2)), secondary_y=False)
+    fig2.add_trace(go.Scatter(x=time_strs, y=spot_vals, name=f"{index_choice} Price", mode="lines", line=dict(color="gray", width=1, dash="dash")), secondary_y=True)
     
-    fig2.update_layout(height=400, margin=dict(l=20, r=20, t=20, b=20), legend=dict(orientation="h", y=1.1, x=0.8))
+    fig2.update_layout(
+        height=400, 
+        margin=dict(l=20, r=20, t=20, b=20), 
+        legend=dict(orientation="h", y=1.1, x=0.8),
+        xaxis=dict(title="Time (Horizontal)")
+    )
     st.plotly_chart(fig2, use_container_width=True)
 
 with tab4:
