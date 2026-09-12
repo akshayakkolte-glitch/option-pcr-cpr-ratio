@@ -21,17 +21,17 @@ with header_right:
 
 st.markdown("---")
 
-# --- GLOBAL SIDEBAR CONTROLS (Always visible and tracks index/expiry correctly) ---
+# --- GLOBAL SIDEBAR CONTROLS ---
 st.sidebar.header("Dashboard Controls")
 index_choice = st.sidebar.selectbox("Select Index", ["NIFTY", "BANKNIFTY", "SENSEX"])
 
-# Proper distinct expiry dates mapped strictly to each index
+# Correct Tuesday/Thursday Expiry Mappings for September 2026
 if index_choice == "NIFTY":
-    expiry_options = ["17 Sep 2026", "24 Sep 2026", "01 Oct 2026"]
+    expiry_options = ["15 Sep 2026", "22 Sep 2026", "29 Sep 2026"]
 elif index_choice == "BANKNIFTY":
-    expiry_options = ["16 Sep 2026", "23 Sep 2026", "30 Sep 2026"]
-else:  # SENSEX
-    expiry_options = ["18 Sep 2026", "25 Sep 2026", "02 Oct 2026"]
+    expiry_options = ["15 Sep 2026", "22 Sep 2026", "29 Sep 2026"]  # Corrected to match true Tuesday expiries
+else:  # SENSEX (BSE Thursdays)
+    expiry_options = ["17 Sep 2026", "24 Sep 2026", "01 Oct 2026"]
     
 expiry_date = st.sidebar.selectbox("Select Expiry Date", expiry_options)
 chart_theme = st.sidebar.selectbox("Chart Theme", ["Dark", "Light"])
@@ -69,7 +69,6 @@ with tab2:
     st.dataframe(option_chain_data, use_container_width=True)
 
 with tab3:
-    # Summary metrics row using the globally selected sidebar controls
     m1, m2, m3, m4 = st.columns(4)
     with m1:
         st.metric(label="Selected Index / Expiry", value=f"{index_choice} ({expiry_date})")
@@ -84,7 +83,6 @@ with tab3:
     st.subheader(f"Part 1: Intraday Timeline Ratios ({index_choice} — {expiry_date})")
     st.write("Tracking overall market Put-Call Ratio (PCR) and Call-Put Ratio (CPR) alongside index spot movement.")
 
-    # Time series generation with clear 15-min intervals
     times = pd.date_range("09:15", "15:30", freq="15min").time
     time_strs = [t.strftime("%I:%M %p") for t in times]
     
@@ -95,34 +93,20 @@ with tab3:
     oi_change_call = np.cumsum(np.random.randn(len(times)) * 50)
     oi_change_put = np.cumsum(np.random.randn(len(times)) * 50)
 
-    # Chart 1: Main PCR & CPR Timeline with unified hover mode
     fig = make_subplots(specs=[[{"secondary_y": True}]])
     fig.add_trace(go.Scatter(x=time_strs, y=pcr_vals, name="Overall PCR", mode="lines", line=dict(color="blue", width=2)), secondary_y=False)
     fig.add_trace(go.Scatter(x=time_strs, y=cpr_vals, name="Overall CPR", mode="lines", line=dict(color="red", width=2)), secondary_y=False)
     fig.add_trace(go.Scatter(x=time_strs, y=spot_vals, name=f"{index_choice} Price", mode="lines", line=dict(color="gray", width=1, dash="dash")), secondary_y=True)
     
-    fig.update_layout(
-        height=400, 
-        margin=dict(l=20, r=20, t=20, b=20), 
-        legend=dict(orientation="h", y=1.1, x=0.8),
-        hovermode="x unified",
-        xaxis=dict(tickangle=0)
-    )
+    fig.update_layout(height=400, margin=dict(l=20, r=20, t=20, b=20), legend=dict(orientation="h", y=1.1, x=0.8), hovermode="x unified", xaxis=dict(tickangle=0))
     st.plotly_chart(fig, use_container_width=True)
 
-    # Chart 2: OI Change Intraday Chart
     fig_oi = make_subplots(specs=[[{"secondary_y": True}]])
     fig_oi.add_trace(go.Scatter(x=time_strs, y=oi_change_call, name="Call OI Change", mode="lines", line=dict(color="red", width=2)), secondary_y=False)
     fig_oi.add_trace(go.Scatter(x=time_strs, y=oi_change_put, name="Put OI Change", mode="lines", line=dict(color="green", width=2)), secondary_y=False)
     fig_oi.add_trace(go.Scatter(x=time_strs, y=spot_vals, name=f"{index_choice} Price", mode="lines", line=dict(color="gray", width=1, dash="dash")), secondary_y=True)
     
-    fig_oi.update_layout(
-        height=300, 
-        margin=dict(l=20, r=20, t=20, b=20), 
-        legend=dict(orientation="h", y=1.1, x=0.8),
-        hovermode="x unified",
-        xaxis=dict(tickangle=0)
-    )
+    fig_oi.update_layout(height=300, margin=dict(l=20, r=20, t=20, b=20), legend=dict(orientation="h", y=1.1, x=0.8), hovermode="x unified", xaxis=dict(tickangle=0))
     st.plotly_chart(fig_oi, use_container_width=True)
 
     st.markdown("---")
@@ -134,13 +118,7 @@ with tab3:
     fig2.add_trace(go.Scatter(x=time_strs, y=cpr_vals * 0.95, name="CPR", mode="lines", line=dict(color="red", width=2)), secondary_y=False)
     fig2.add_trace(go.Scatter(x=time_strs, y=spot_vals, name=f"{index_choice} Price", mode="lines", line=dict(color="gray", width=1, dash="dash")), secondary_y=True)
     
-    fig2.update_layout(
-        height=400, 
-        margin=dict(l=20, r=20, t=20, b=20), 
-        legend=dict(orientation="h", y=1.1, x=0.8),
-        hovermode="x unified",
-        xaxis=dict(tickangle=0)
-    )
+    fig2.update_layout(height=400, margin=dict(l=20, r=20, t=20, b=20), legend=dict(orientation="h", y=1.1, x=0.8), hovermode="x unified", xaxis=dict(tickangle=0))
     st.plotly_chart(fig2, use_container_width=True)
 
 with tab4:
