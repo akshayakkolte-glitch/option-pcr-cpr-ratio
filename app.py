@@ -54,14 +54,14 @@ with m4:
 
 st.markdown("---")
 st.subheader(f"Part 1: Intraday Timeline Ratios ({index_choice} — {expiry_date})")
-st.write(f"Tracking {index_choice} Put-Call Ratio (PCR) and Call-Put Ratio (CPR) at 1-minute intervals for today.")
+st.write(f"Tracking {index_choice} Put-Call Ratio (PCR) and Call-Put Ratio (CPR) at 1-minute data frequency with 30-minute axis labels.")
 
-# 1-minute interval data points for a single trading day (09:15 to 15:30)
+# 1-minute interval data points for high-resolution lines
 times = pd.date_range("2026-09-12 09:15:00", "2026-09-12 15:30:00", freq="1min")
 time_strs = [t.strftime("%I:%M %p") for t in times]
 
-# Define 15-minute tick marks for clean axis display
-tick_indices = list(range(0, len(time_strs), 15))
+# Set tick marks at every 30-minute interval for clean axis display below
+tick_indices = list(range(0, len(time_strs), 30))
 tick_vals = [time_strs[i] for i in tick_indices]
 
 np.random.seed(42)
@@ -72,7 +72,7 @@ spot_vals = 76800 + np.cumsum(np.random.randn(num_points) * 2)
 oi_change_call = np.cumsum(np.random.randn(num_points) * 20)
 oi_change_put = np.cumsum(np.random.randn(num_points) * 20)
 
-# Chart 1: Main PCR & CPR Timeline (1-min lines, 15-min axis ticks)
+# Chart 1: Main PCR & CPR Timeline
 fig = make_subplots(specs=[[{"secondary_y": True}]])
 fig.add_trace(go.Scatter(x=time_strs, y=pcr_vals, name="Overall PCR", mode="lines", line=dict(color="blue", width=2)), secondary_y=False)
 fig.add_trace(go.Scatter(x=time_strs, y=cpr_vals, name="Overall CPR", mode="lines", line=dict(color="red", width=2)), secondary_y=False)
@@ -87,7 +87,7 @@ fig.update_layout(
 )
 st.plotly_chart(fig, use_container_width=True)
 
-# Chart 2: OI Change Intraday Chart (1-min lines, 15-min axis ticks)
+# Chart 2: OI Change Intraday Chart
 fig_oi = make_subplots(specs=[[{"secondary_y": True}]])
 fig_oi.add_trace(go.Scatter(x=time_strs, y=oi_change_call, name="Call OI Change", mode="lines", line=dict(color="red", width=2)), secondary_y=False)
 fig_oi.add_trace(go.Scatter(x=time_strs, y=oi_change_put, name="Put OI Change", mode="lines", line=dict(color="green", width=2)), secondary_y=False)
