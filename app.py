@@ -54,15 +54,33 @@ with m4:
 
 st.markdown("---")
 st.subheader(f"Part 1: Intraday Timeline Ratios ({index_choice} — {expiry_date})")
-st.write(f"Tracking {index_choice} Put-Call Ratio (PCR) and Call-Put Ratio (CPR) at 1-minute data frequency with 30-minute axis labels.")
+st.write(f"Tracking {index_choice} live session data from market open up to the current time.")
 
-# 1-minute interval data points for high-resolution lines
-times = pd.date_range("2026-09-12 09:15:00", "2026-09-12 15:30:00", freq="1min")
+# Generate full day 1-min sequence from 09:15 to 15:30
+full_times = pd.date_range("2026-09-12 09:15:00", "2026-09-12 15:30:00", freq="1min")
+
+# Dynamic check: match current system time to simulate live market progression
+now_time = datetime.now().time()
+market_open = time(9, 15)
+market_close = time(15, 30)
+
+# For testing or outside market hours, default to full view or slice up to current time
+# If market is ongoing, slice data up to the current minute
+active_end_index = len(full_times)
+if market_open <= now_time <= market_close:
+    # Find matching index for current time
+    current_dt = datetime.combine(datetime.today(), now_time)
+    # Filter full_times up to current time
+    valid_times = [t for t in full_times if t.time() <= now_time]
+    if len(valid_times) > 0:
+        active_end_index = len(valid_times)
+
+times = full_times[:active_end_index]
 time_strs = [t.strftime("%I:%M %p") for t in times]
 
-# Set tick marks at every 30-minute interval for clean axis display below
+# Set tick marks at every 30-minute interval for clean axis display
 tick_indices = list(range(0, len(time_strs), 30))
-tick_vals = [time_strs[i] for i in tick_indices]
+tick_vals = [time_strs[i] for i in tick_indices if i < len(time_strs)]
 
 np.random.seed(42)
 num_points = len(times)
