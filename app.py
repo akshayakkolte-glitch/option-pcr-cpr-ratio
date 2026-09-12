@@ -54,17 +54,17 @@ with tab2:
     st.dataframe(option_chain_data, use_container_width=True)
 
 with tab3:
-    # Sidebar Controls with correct index-specific expiries
+    # Sidebar Controls with accurate current expiry dates
     st.sidebar.header("Dashboard Controls")
     index_choice = st.sidebar.selectbox("Select Index", ["NIFTY", "BANKNIFTY", "SENSEX"])
     
-    # Correct expiry dates based on index selection
+    # Accurate upcoming expiry mappings for September 2026
     if index_choice == "NIFTY":
         expiry_options = ["17 Sep 2026", "24 Sep 2026", "01 Oct 2026"]
     elif index_choice == "BANKNIFTY":
+        expiry_options = ["16 Sep 2026", "23 Sep 2026", "30 Sep 2026"]
+    else:  # SENSEX (BSE weekly expiries on Fridays)
         expiry_options = ["18 Sep 2026", "25 Sep 2026", "02 Oct 2026"]
-    else:  # SENSEX
-        expiry_options = ["19 Sep 2026", "26 Sep 2026", "03 Oct 2026"]
         
     expiry_date = st.sidebar.selectbox("Select Expiry Date", expiry_options)
     chart_theme = st.sidebar.selectbox("Chart Theme", ["Dark", "Light"])
@@ -84,8 +84,8 @@ with tab3:
     st.subheader(f"Part 1: Intraday Timeline Ratios ({index_choice} — {expiry_date})")
     st.write("Tracking overall market Put-Call Ratio (PCR) and Call-Put Ratio (CPR) alongside index spot movement.")
 
-    # Time series data generation
-    times = pd.date_range("09:15", "15:30", freq="15min").time  # 15-min intervals so labels don't bunch up
+    # Strict 15-minute gap time series generation (09:15 to 15:30)
+    times = pd.date_range("09:15", "15:30", freq="15min").time
     time_strs = [t.strftime("%I:%M %p") for t in times]
     
     np.random.seed(42)
@@ -95,7 +95,7 @@ with tab3:
     oi_change_call = np.cumsum(np.random.randn(len(times)) * 50)
     oi_change_put = np.cumsum(np.random.randn(len(times)) * 50)
 
-    # Chart 1: Main PCR & CPR Timeline (Clean smooth lines, horizontal flat text labels)
+    # Chart 1: Main PCR & CPR Timeline (Clean spacing, 15-min intervals)
     fig = make_subplots(specs=[[{"secondary_y": True}]])
     fig.add_trace(go.Scatter(x=time_strs, y=pcr_vals, name="Overall PCR", mode="lines", line=dict(color="blue", width=2)), secondary_y=False)
     fig.add_trace(go.Scatter(x=time_strs, y=cpr_vals, name="Overall CPR", mode="lines", line=dict(color="red", width=2)), secondary_y=False)
@@ -105,11 +105,11 @@ with tab3:
         height=400, 
         margin=dict(l=20, r=20, t=20, b=20), 
         legend=dict(orientation="h", y=1.1, x=0.8),
-        xaxis=dict(tickangle=0) # Keeps time labels sitting normally, not vertical
+        xaxis=dict(tickangle=0, dtick=1) # Displays clean 15-min spacing without overlap
     )
     st.plotly_chart(fig, use_container_width=True)
 
-    # Chart 2: OI Change Intraday Chart (Smooth lines)
+    # Chart 2: OI Change Intraday Chart (15-min intervals)
     fig_oi = make_subplots(specs=[[{"secondary_y": True}]])
     fig_oi.add_trace(go.Scatter(x=time_strs, y=oi_change_call, name="Call OI Change", mode="lines", line=dict(color="red", width=2)), secondary_y=False)
     fig_oi.add_trace(go.Scatter(x=time_strs, y=oi_change_put, name="Put OI Change", mode="lines", line=dict(color="green", width=2)), secondary_y=False)
@@ -119,7 +119,7 @@ with tab3:
         height=300, 
         margin=dict(l=20, r=20, t=20, b=20), 
         legend=dict(orientation="h", y=1.1, x=0.8),
-        xaxis=dict(tickangle=0)
+        xaxis=dict(tickangle=0, dtick=1)
     )
     st.plotly_chart(fig_oi, use_container_width=True)
 
@@ -136,7 +136,7 @@ with tab3:
         height=400, 
         margin=dict(l=20, r=20, t=20, b=20), 
         legend=dict(orientation="h", y=1.1, x=0.8),
-        xaxis=dict(tickangle=0)
+        xaxis=dict(tickangle=0, dtick=1)
     )
     st.plotly_chart(fig2, use_container_width=True)
 
