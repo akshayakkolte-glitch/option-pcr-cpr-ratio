@@ -42,7 +42,6 @@ with tab2:
     st.header("Live Option Chain")
     st.write("Real-time Open Interest (OI), change in OI, LTP, and strike prices.")
     
-    # Mock Option Chain Table data
     option_chain_data = pd.DataFrame({
         "CALL OI": [150000, 230000, 410000, 890000, 1200000],
         "CALL Chg OI": [12000, -5000, 34000, 78000, 150000],
@@ -55,17 +54,17 @@ with tab2:
     st.dataframe(option_chain_data, use_container_width=True)
 
 with tab3:
-    # Sidebar Controls specific to analytics with dynamic expiry mapping
+    # Sidebar Controls with correct index-specific expiries
     st.sidebar.header("Dashboard Controls")
     index_choice = st.sidebar.selectbox("Select Index", ["NIFTY", "BANKNIFTY", "SENSEX"])
     
-    # Dynamic expiry options based on selected index
+    # Correct expiry dates based on index selection
     if index_choice == "NIFTY":
-        expiry_options = ["15 Sep 2026", "22 Sep 2026", "29 Sep 2026"]
-    elif index_choice == "BANKNIFTY":
         expiry_options = ["17 Sep 2026", "24 Sep 2026", "01 Oct 2026"]
-    else:
+    elif index_choice == "BANKNIFTY":
         expiry_options = ["18 Sep 2026", "25 Sep 2026", "02 Oct 2026"]
+    else:  # SENSEX
+        expiry_options = ["19 Sep 2026", "26 Sep 2026", "03 Oct 2026"]
         
     expiry_date = st.sidebar.selectbox("Select Expiry Date", expiry_options)
     chart_theme = st.sidebar.selectbox("Chart Theme", ["Dark", "Light"])
@@ -85,8 +84,8 @@ with tab3:
     st.subheader(f"Part 1: Intraday Timeline Ratios ({index_choice} — {expiry_date})")
     st.write("Tracking overall market Put-Call Ratio (PCR) and Call-Put Ratio (CPR) alongside index spot movement.")
 
-    # Time series data generation with horizontal layout indices (Times on X-axis)
-    times = pd.date_range("09:15", "15:30", freq="5min").time
+    # Time series data generation
+    times = pd.date_range("09:15", "15:30", freq="15min").time  # 15-min intervals so labels don't bunch up
     time_strs = [t.strftime("%I:%M %p") for t in times]
     
     np.random.seed(42)
@@ -96,21 +95,21 @@ with tab3:
     oi_change_call = np.cumsum(np.random.randn(len(times)) * 50)
     oi_change_put = np.cumsum(np.random.randn(len(times)) * 50)
 
-    # Chart 1: Main PCR & CPR Timeline (Horizontal X-Axis, hovering shows both PCR and CPR)
+    # Chart 1: Main PCR & CPR Timeline (Clean smooth lines, horizontal flat text labels)
     fig = make_subplots(specs=[[{"secondary_y": True}]])
-    fig.add_trace(go.Scatter(x=time_strs, y=pcr_vals, name="Overall PCR", mode="lines+markers", line=dict(color="blue", width=2)), secondary_y=False)
-    fig.add_trace(go.Scatter(x=time_strs, y=cpr_vals, name="Overall CPR", mode="lines+markers", line=dict(color="red", width=2)), secondary_y=False)
+    fig.add_trace(go.Scatter(x=time_strs, y=pcr_vals, name="Overall PCR", mode="lines", line=dict(color="blue", width=2)), secondary_y=False)
+    fig.add_trace(go.Scatter(x=time_strs, y=cpr_vals, name="Overall CPR", mode="lines", line=dict(color="red", width=2)), secondary_y=False)
     fig.add_trace(go.Scatter(x=time_strs, y=spot_vals, name=f"{index_choice} Price", mode="lines", line=dict(color="gray", width=1, dash="dash")), secondary_y=True)
     
     fig.update_layout(
         height=400, 
         margin=dict(l=20, r=20, t=20, b=20), 
         legend=dict(orientation="h", y=1.1, x=0.8),
-        xaxis=dict(title="Time (Horizontal)")
+        xaxis=dict(tickangle=0) # Keeps time labels sitting normally, not vertical
     )
     st.plotly_chart(fig, use_container_width=True)
 
-    # Chart 2: OI Change Intraday Chart (Call vs Put Change)
+    # Chart 2: OI Change Intraday Chart (Smooth lines)
     fig_oi = make_subplots(specs=[[{"secondary_y": True}]])
     fig_oi.add_trace(go.Scatter(x=time_strs, y=oi_change_call, name="Call OI Change", mode="lines", line=dict(color="red", width=2)), secondary_y=False)
     fig_oi.add_trace(go.Scatter(x=time_strs, y=oi_change_put, name="Put OI Change", mode="lines", line=dict(color="green", width=2)), secondary_y=False)
@@ -120,7 +119,7 @@ with tab3:
         height=300, 
         margin=dict(l=20, r=20, t=20, b=20), 
         legend=dict(orientation="h", y=1.1, x=0.8),
-        xaxis=dict(title="Time (Horizontal)")
+        xaxis=dict(tickangle=0)
     )
     st.plotly_chart(fig_oi, use_container_width=True)
 
@@ -137,7 +136,7 @@ with tab3:
         height=400, 
         margin=dict(l=20, r=20, t=20, b=20), 
         legend=dict(orientation="h", y=1.1, x=0.8),
-        xaxis=dict(title="Time (Horizontal)")
+        xaxis=dict(tickangle=0)
     )
     st.plotly_chart(fig2, use_container_width=True)
 
