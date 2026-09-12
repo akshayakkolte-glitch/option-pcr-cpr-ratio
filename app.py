@@ -21,6 +21,21 @@ with header_right:
 
 st.markdown("---")
 
+# --- GLOBAL SIDEBAR CONTROLS (Always visible and tracks index/expiry correctly) ---
+st.sidebar.header("Dashboard Controls")
+index_choice = st.sidebar.selectbox("Select Index", ["NIFTY", "BANKNIFTY", "SENSEX"])
+
+# Proper distinct expiry dates mapped strictly to each index
+if index_choice == "NIFTY":
+    expiry_options = ["17 Sep 2026", "24 Sep 2026", "01 Oct 2026"]
+elif index_choice == "BANKNIFTY":
+    expiry_options = ["16 Sep 2026", "23 Sep 2026", "30 Sep 2026"]
+else:  # SENSEX
+    expiry_options = ["18 Sep 2026", "25 Sep 2026", "02 Oct 2026"]
+    
+expiry_date = st.sidebar.selectbox("Select Expiry Date", expiry_options)
+chart_theme = st.sidebar.selectbox("Chart Theme", ["Dark", "Light"])
+
 # Professional Top Navigation Tabs
 tab1, tab2, tab3, tab4 = st.tabs(["Strategy Builder", "Option Chain", "PCR & CPR Analytics", "Historical Chart"])
 
@@ -40,7 +55,7 @@ with tab1:
 
 with tab2:
     st.header("Live Option Chain")
-    st.write("Real-time Open Interest (OI), change in OI, LTP, and strike prices.")
+    st.write(f"Real-time Open Interest for {index_choice} ({expiry_date})")
     
     option_chain_data = pd.DataFrame({
         "CALL OI": [150000, 230000, 410000, 890000, 1200000],
@@ -54,21 +69,7 @@ with tab2:
     st.dataframe(option_chain_data, use_container_width=True)
 
 with tab3:
-    # Sidebar Controls with correct dynamic index expiries
-    st.sidebar.header("Dashboard Controls")
-    index_choice = st.sidebar.selectbox("Select Index", ["NIFTY", "BANKNIFTY", "SENSEX"])
-    
-    if index_choice == "NIFTY":
-        expiry_options = ["15 Sep 2026", "22 Sep 2026", "29 Sep 2026"]
-    elif index_choice == "BANKNIFTY":
-        expiry_options = ["17 Sep 2026", "24 Sep 2026", "01 Oct 2026"]
-    else:
-        expiry_options = ["18 Sep 2026", "25 Sep 2026", "02 Oct 2026"]
-        
-    expiry_date = st.sidebar.selectbox("Select Expiry Date", expiry_options)
-    chart_theme = st.sidebar.selectbox("Chart Theme", ["Dark", "Light"])
-
-    # Summary metrics row
+    # Summary metrics row using the globally selected sidebar controls
     m1, m2, m3, m4 = st.columns(4)
     with m1:
         st.metric(label="Selected Index / Expiry", value=f"{index_choice} ({expiry_date})")
@@ -94,7 +95,7 @@ with tab3:
     oi_change_call = np.cumsum(np.random.randn(len(times)) * 50)
     oi_change_put = np.cumsum(np.random.randn(len(times)) * 50)
 
-    # Chart 1: Main PCR & CPR Timeline with unified hover mode (matches first image style)
+    # Chart 1: Main PCR & CPR Timeline with unified hover mode
     fig = make_subplots(specs=[[{"secondary_y": True}]])
     fig.add_trace(go.Scatter(x=time_strs, y=pcr_vals, name="Overall PCR", mode="lines", line=dict(color="blue", width=2)), secondary_y=False)
     fig.add_trace(go.Scatter(x=time_strs, y=cpr_vals, name="Overall CPR", mode="lines", line=dict(color="red", width=2)), secondary_y=False)
@@ -104,7 +105,7 @@ with tab3:
         height=400, 
         margin=dict(l=20, r=20, t=20, b=20), 
         legend=dict(orientation="h", y=1.1, x=0.8),
-        hovermode="x unified",  # Restores the clear multi-metric hover box from your first image!
+        hovermode="x unified",
         xaxis=dict(tickangle=0)
     )
     st.plotly_chart(fig, use_container_width=True)
@@ -144,4 +145,4 @@ with tab3:
 
 with tab4:
     st.header("Historical Charts & Market Depth")
-    st.write("Analyze historical trends, volume profiles, and advance-decline indicators.")
+    st.write(f"Analyze historical trends and volume profiles for {index_choice}.")
