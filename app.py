@@ -8,119 +8,114 @@ from datetime import datetime, time, timedelta
 # Page Configuration
 st.set_page_config(page_title="Option PCR & CPR Ratio", layout="wide")
 
-# Top Header with Profile on the Right
-header_left, header_right = st.columns([5, 1])
-
-with header_left:
-    st.title("📊 Option PCR & CPR Ratio: Real-Time Intraday Analytics")
-    st.markdown("Professional derivatives intelligence tracking live timelines, overall market ratios, and 16-strike zone aggregation.")
-
-with header_right:
-    st.image("https://api.dicebear.com/7.x/avataaars/svg?seed=Akshay", width=40)
-    st.markdown("**Akshay**")
+# Top Header without Profile section
+st.title("📊 Option PCR & CPR Ratio: Real-Time Intraday Analytics")
+st.markdown("Professional derivatives intelligence tracking live timelines, overall market ratios, and 16-strike zone aggregation.")
 
 st.markdown("---")
 
-# --- GLOBAL SIDEBAR CONTROLS ---
+# --- GLOBAL SIDEBAR CONTROLS & AUTO-REFRESH TOGGLE ---
 st.sidebar.header("Dashboard Controls")
 index_choice = st.sidebar.selectbox("Select Index", ["NIFTY", "BANKNIFTY", "SENSEX"])
 
-# Correct Tuesday/Thursday Expiry Mappings for September 2026
 if index_choice == "NIFTY":
     expiry_options = ["15 Sep 2026", "22 Sep 2026", "29 Sep 2026"]
 elif index_choice == "BANKNIFTY":
-    expiry_options = ["15 Sep 2026", "22 Sep 2026", "29 Sep 2026"]  # Corrected to match true Tuesday expiries
-else:  # SENSEX (BSE Thursdays)
+    expiry_options = ["15 Sep 2026", "22 Sep 2026", "29 Sep 2026"]
+else:  # SENSEX
     expiry_options = ["17 Sep 2026", "24 Sep 2026", "01 Oct 2026"]
     
 expiry_date = st.sidebar.selectbox("Select Expiry Date", expiry_options)
 chart_theme = st.sidebar.selectbox("Chart Theme", ["Dark", "Light"])
 
-# Professional Top Navigation Tabs
-tab1, tab2, tab3, tab4 = st.tabs(["Strategy Builder", "Option Chain", "PCR & CPR Analytics", "Historical Chart"])
+st.sidebar.markdown("---")
+st.sidebar.subheader("Live Feed Status")
+auto_refresh = st.sidebar.toggle("🟢 Auto-Refresh (Live)", value=True)
 
-with tab1:
-    st.header("Strategy Builder & Payoff Graphs")
-    st.write("Build and analyze multi-leg option strategies with visual risk-reward profiles.")
-    
-    col1, col2, col3, col4 = st.columns(4)
-    with col1:
-        st.info("📈 Short Straddle")
-    with col2:
-        st.info("📉 Short Strangle")
-    with col3:
-        st.info("🛡️ Short Iron Condor")
-    with col4:
-        st.info("🦋 Short Iron Butterfly")
+if auto_refresh:
+    st.sidebar.caption("Status: **Active (Live Feed ON)**")
+else:
+    st.sidebar.caption("Status: **Paused (Manual Mode)**")
 
-with tab2:
-    st.header("Live Option Chain")
-    st.write(f"Real-time Open Interest for {index_choice} ({expiry_date})")
-    
-    option_chain_data = pd.DataFrame({
-        "CALL OI": [150000, 230000, 410000, 890000, 1200000],
-        "CALL Chg OI": [12000, -5000, 34000, 78000, 150000],
-        "CALL LTP": [145.2, 98.5, 54.1, 22.4, 8.5],
-        "Strike Price": [23300, 23350, 23400, 23450, 23500],
-        "PUT LTP": [12.1, 28.4, 65.2, 112.0, 175.5],
-        "PUT Chg OI": [-8000, 19000, 45000, 92000, 134000],
-        "PUT OI": [900000, 750000, 620000, 410000, 210000]
-    })
-    st.dataframe(option_chain_data, use_container_width=True)
+# Dynamic metric labels based on selected index
+pcr_label = f"{index_choice} Overall PCR"
+cpr_label = f"{index_choice} Overall CPR"
 
-with tab3:
-    m1, m2, m3, m4 = st.columns(4)
-    with m1:
-        st.metric(label="Selected Index / Expiry", value=f"{index_choice} ({expiry_date})")
-    with m2:
-        st.metric(label="Market Overall PCR", value="0.955", delta="Bearish (<1.0)")
-    with m3:
-        st.metric(label="Market Overall CPR", value="1.046", delta="Inverse Sentiment")
-    with m4:
-        st.metric(label="Market Bias", value="Consolidation")
+# --- MAIN ANALYTICS DASHBOARD (Single View, No Tabs) ---
+m1, m2, m3, m4 = st.columns(4)
+with m1:
+    st.metric(label="Selected Index / Expiry", value=f"{index_choice} ({expiry_date})")
+with m2:
+    st.metric(label=pcr_label, value="0.94", delta="Bearish (<1.0)")
+with m3:
+    st.metric(label=cpr_label, value="1.064", delta="Inverse Sentiment")
+with m4:
+    st.metric(label="Market Bias", value="Consolidation")
 
-    st.markdown("---")
-    st.subheader(f"Part 1: Intraday Timeline Ratios ({index_choice} — {expiry_date})")
-    st.write("Tracking overall market Put-Call Ratio (PCR) and Call-Put Ratio (CPR) alongside index spot movement.")
+st.markdown("---")
+st.subheader(f"Part 1: Intraday Timeline Ratios ({index_choice} — {expiry_date})")
+st.write(f"Tracking {index_choice} Put-Call Ratio (PCR) and Call-Put Ratio (CPR) at 1-minute intervals for today.")
 
-    times = pd.date_range("09:15", "15:30", freq="15min").time
-    time_strs = [t.strftime("%I:%M %p") for t in times]
-    
-    np.random.seed(42)
-    pcr_vals = np.clip(1.0 + np.cumsum(np.random.randn(len(times)) * 0.02), 0.8, 1.3)
-    cpr_vals = np.clip(1.0 - np.cumsum(np.random.randn(len(times)) * 0.02), 0.7, 1.2)
-    spot_vals = 23400 + np.cumsum(np.random.randn(len(times)) * 5)
-    oi_change_call = np.cumsum(np.random.randn(len(times)) * 50)
-    oi_change_put = np.cumsum(np.random.randn(len(times)) * 50)
+# 1-minute interval data points for a single trading day (09:15 to 15:30)
+times = pd.date_range("2026-09-12 09:15:00", "2026-09-12 15:30:00", freq="1min")
+time_strs = [t.strftime("%I:%M %p") for t in times]
 
-    fig = make_subplots(specs=[[{"secondary_y": True}]])
-    fig.add_trace(go.Scatter(x=time_strs, y=pcr_vals, name="Overall PCR", mode="lines", line=dict(color="blue", width=2)), secondary_y=False)
-    fig.add_trace(go.Scatter(x=time_strs, y=cpr_vals, name="Overall CPR", mode="lines", line=dict(color="red", width=2)), secondary_y=False)
-    fig.add_trace(go.Scatter(x=time_strs, y=spot_vals, name=f"{index_choice} Price", mode="lines", line=dict(color="gray", width=1, dash="dash")), secondary_y=True)
-    
-    fig.update_layout(height=400, margin=dict(l=20, r=20, t=20, b=20), legend=dict(orientation="h", y=1.1, x=0.8), hovermode="x unified", xaxis=dict(tickangle=0))
-    st.plotly_chart(fig, use_container_width=True)
+# Define 15-minute tick marks for clean axis display
+tick_indices = list(range(0, len(time_strs), 15))
+tick_vals = [time_strs[i] for i in tick_indices]
 
-    fig_oi = make_subplots(specs=[[{"secondary_y": True}]])
-    fig_oi.add_trace(go.Scatter(x=time_strs, y=oi_change_call, name="Call OI Change", mode="lines", line=dict(color="red", width=2)), secondary_y=False)
-    fig_oi.add_trace(go.Scatter(x=time_strs, y=oi_change_put, name="Put OI Change", mode="lines", line=dict(color="green", width=2)), secondary_y=False)
-    fig_oi.add_trace(go.Scatter(x=time_strs, y=spot_vals, name=f"{index_choice} Price", mode="lines", line=dict(color="gray", width=1, dash="dash")), secondary_y=True)
-    
-    fig_oi.update_layout(height=300, margin=dict(l=20, r=20, t=20, b=20), legend=dict(orientation="h", y=1.1, x=0.8), hovermode="x unified", xaxis=dict(tickangle=0))
-    st.plotly_chart(fig_oi, use_container_width=True)
+np.random.seed(42)
+num_points = len(times)
+pcr_vals = np.clip(1.0 + np.cumsum(np.random.randn(num_points) * 0.01), 0.8, 1.3)
+cpr_vals = np.clip(1.0 - np.cumsum(np.random.randn(num_points) * 0.01), 0.7, 1.2)
+spot_vals = 76800 + np.cumsum(np.random.randn(num_points) * 2)
+oi_change_call = np.cumsum(np.random.randn(num_points) * 20)
+oi_change_put = np.cumsum(np.random.randn(num_points) * 20)
 
-    st.markdown("---")
-    st.subheader("Part 2: 16-Strike Combined Zone Analysis (8 Above + 8 Below Strikes Aggregate)")
-    st.write(f"Aggregated Open Interest for 8 strikes above and 8 strikes below ATM ({index_choice}) matching Part 1 colors.")
-    
-    fig2 = make_subplots(specs=[[{"secondary_y": True}]])
-    fig2.add_trace(go.Scatter(x=time_strs, y=pcr_vals * 1.05, name="PCR", mode="lines", line=dict(color="blue", width=2)), secondary_y=False)
-    fig2.add_trace(go.Scatter(x=time_strs, y=cpr_vals * 0.95, name="CPR", mode="lines", line=dict(color="red", width=2)), secondary_y=False)
-    fig2.add_trace(go.Scatter(x=time_strs, y=spot_vals, name=f"{index_choice} Price", mode="lines", line=dict(color="gray", width=1, dash="dash")), secondary_y=True)
-    
-    fig2.update_layout(height=400, margin=dict(l=20, r=20, t=20, b=20), legend=dict(orientation="h", y=1.1, x=0.8), hovermode="x unified", xaxis=dict(tickangle=0))
-    st.plotly_chart(fig2, use_container_width=True)
+# Chart 1: Main PCR & CPR Timeline (1-min lines, 15-min axis ticks)
+fig = make_subplots(specs=[[{"secondary_y": True}]])
+fig.add_trace(go.Scatter(x=time_strs, y=pcr_vals, name="Overall PCR", mode="lines", line=dict(color="blue", width=2)), secondary_y=False)
+fig.add_trace(go.Scatter(x=time_strs, y=cpr_vals, name="Overall CPR", mode="lines", line=dict(color="red", width=2)), secondary_y=False)
+fig.add_trace(go.Scatter(x=time_strs, y=spot_vals, name=f"{index_choice} Price", mode="lines", line=dict(color="gray", width=1, dash="dash")), secondary_y=True)
 
-with tab4:
-    st.header("Historical Charts & Market Depth")
-    st.write(f"Analyze historical trends and volume profiles for {index_choice}.")
+fig.update_layout(
+    height=400, 
+    margin=dict(l=20, r=20, t=20, b=20), 
+    legend=dict(orientation="h", y=1.1, x=0.8), 
+    hovermode="x unified", 
+    xaxis=dict(tickmode='array', tickvals=tick_vals, tickangle=0)
+)
+st.plotly_chart(fig, use_container_width=True)
+
+# Chart 2: OI Change Intraday Chart (1-min lines, 15-min axis ticks)
+fig_oi = make_subplots(specs=[[{"secondary_y": True}]])
+fig_oi.add_trace(go.Scatter(x=time_strs, y=oi_change_call, name="Call OI Change", mode="lines", line=dict(color="red", width=2)), secondary_y=False)
+fig_oi.add_trace(go.Scatter(x=time_strs, y=oi_change_put, name="Put OI Change", mode="lines", line=dict(color="green", width=2)), secondary_y=False)
+fig_oi.add_trace(go.Scatter(x=time_strs, y=spot_vals, name=f"{index_choice} Price", mode="lines", line=dict(color="gray", width=1, dash="dash")), secondary_y=True)
+
+fig_oi.update_layout(
+    height=300, 
+    margin=dict(l=20, r=20, t=20, b=20), 
+    legend=dict(orientation="h", y=1.1, x=0.8), 
+    hovermode="x unified", 
+    xaxis=dict(tickmode='array', tickvals=tick_vals, tickangle=0)
+)
+st.plotly_chart(fig_oi, use_container_width=True)
+
+st.markdown("---")
+st.subheader("Part 2: 16-Strike Combined Zone Analysis (8 Above + 8 Below Strikes Aggregate)")
+st.write(f"Aggregated Open Interest for 8 strikes above and 8 strikes below ATM ({index_choice}).")
+
+fig2 = make_subplots(specs=[[{"secondary_y": True}]])
+fig2.add_trace(go.Scatter(x=time_strs, y=pcr_vals * 1.05, name="PCR", mode="lines", line=dict(color="blue", width=2)), secondary_y=False)
+fig2.add_trace(go.Scatter(x=time_strs, y=cpr_vals * 0.95, name="CPR", mode="lines", line=dict(color="red", width=2)), secondary_y=False)
+fig2.add_trace(go.Scatter(x=time_strs, y=spot_vals, name=f"{index_choice} Price", mode="lines", line=dict(color="gray", width=1, dash="dash")), secondary_y=True)
+
+fig2.update_layout(
+    height=400, 
+    margin=dict(l=20, r=20, t=20, b=20), 
+    legend=dict(orientation="h", y=1.1, x=0.8), 
+    hovermode="x unified", 
+    xaxis=dict(tickmode='array', tickvals=tick_vals, tickangle=0)
+)
+st.plotly_chart(fig2, use_container_width=True)
