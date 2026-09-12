@@ -12,7 +12,16 @@ st.set_page_config(page_title="Option PCR & CPR Ratio", layout="wide")
 # Auto-refresh interval set to 5000 milliseconds (5 seconds)
 st_autorefresh(interval=5000, limit=None, key="option_pcr_refresh")
 
-st.title("📊 Option PCR & CPR Ratio: Real-Time Intraday Analytics")
+# Split the top header into two columns: Title on the left, Profile on the right
+header_left, header_right = st.columns([5, 1])
+
+with header_left:
+    st.title("📊 Option PCR & CPR Ratio: Real-Time Intraday Analytics")
+    st.markdown("Professional derivatives intelligence tracking live timelines, overall market ratios, and 16-strike zone aggregation.")
+
+with header_right:
+    st.image("https://api.dicebear.com/7.x/avataaars/svg?seed=Akshay", width=40)
+    st.markdown("**Akshay**")st.title("📊 Option PCR & CPR Ratio: Real-Time Intraday Analytics")
 st.markdown("Professional derivatives intelligence tracking live timelines, overall market ratios, and 16-strike zone aggregation.")
 
 # --- SIDEBAR CONTROLS ---
