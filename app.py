@@ -65,7 +65,7 @@ with tab3:
     st.subheader(f"Part 1: Intraday Timeline Ratios ({index_choice} — {expiry_date})")
     st.write("Tracking overall market Put-Call Ratio (PCR) and Call-Put Ratio (CPR) alongside index spot movement.")
 
-    # Generating time series chart matching your original layout
+    # Time series data generation
     times = pd.date_range("09:15", "15:30", freq="5min").time
     time_strs = [t.strftime("%I:%M %p") for t in times]
     
@@ -73,7 +73,10 @@ with tab3:
     pcr_vals = np.clip(1.0 + np.cumsum(np.random.randn(len(times)) * 0.02), 0.8, 1.3)
     cpr_vals = np.clip(1.0 - np.cumsum(np.random.randn(len(times)) * 0.02), 0.7, 1.2)
     spot_vals = 23400 + np.cumsum(np.random.randn(len(times)) * 5)
+    oi_change_call = np.cumsum(np.random.randn(len(times)) * 50)
+    oi_change_put = np.cumsum(np.random.randn(len(times)) * 50)
 
+    # Chart 1: Main PCR & CPR Timeline
     fig = make_subplots(specs=[[{"secondary_y": True}]])
     fig.add_trace(go.Scatter(x=time_strs, y=pcr_vals, name="Overall PCR", line=dict(color="blue", width=2)), secondary_y=False)
     fig.add_trace(go.Scatter(x=time_strs, y=cpr_vals, name="Overall CPR", line=dict(color="red", width=2)), secondary_y=False)
@@ -81,6 +84,15 @@ with tab3:
     
     fig.update_layout(height=400, margin=dict(l=20, r=20, t=20, b=20), legend=dict(orientation="h", y=1.1, x=0.8))
     st.plotly_chart(fig, use_container_width=True)
+
+    # Chart 2: OI Change Intraday Chart (Call vs Put Change)
+    fig_oi = make_subplots(specs=[[{"secondary_y": True}]])
+    fig_oi.add_trace(go.Scatter(x=time_strs, y=oi_change_call, name="Call OI Change", line=dict(color="red", width=2)), secondary_y=False)
+    fig_oi.add_trace(go.Scatter(x=time_strs, y=oi_change_put, name="Put OI Change", line=dict(color="green", width=2)), secondary_y=False)
+    fig_oi.add_trace(go.Scatter(x=time_strs, y=spot_vals, name="NIFTY Price", line=dict(color="gray", width=1, dash="dash")), secondary_y=True)
+    
+    fig_oi.update_layout(height=300, margin=dict(l=20, r=20, t=20, b=20), legend=dict(orientation="h", y=1.1, x=0.8))
+    st.plotly_chart(fig_oi, use_container_width=True)
 
     st.markdown("---")
     st.subheader("Part 2: 16-Strike Combined Zone Analysis (8 Above + 8 Below Strikes Aggregate)")
